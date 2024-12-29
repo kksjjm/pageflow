@@ -6,6 +6,8 @@ export interface Screen {
     image: string;
     component: string;
     api: string;
+    componentInfo?: ComponentInfo[];
+    apiInfo?: APIInfo[];
   }
   
   export interface ScreenNode {
@@ -27,3 +29,22 @@ export interface Screen {
     nodes: ScreenNode[];
     edges: ScreenEdge[];
   }
+
+export interface ComponentInfo {
+    id: string;
+    name: string;
+    props: { [key: string]: string | number | boolean };
+    children?: ComponentInfo[];
+    actions?: { [key: string]: () => void };
+}
+
+export interface APIInfo {
+    apiID: string;
+    endpoint: string;
+    method: 'GET'|'POST'|'PUT'|'DELETE';
+    request: { [key: string]: string | number | boolean };
+    response: {
+        format: 'JSON' | 'XML';
+        structure: { [key: string]: string };
+    };
+}

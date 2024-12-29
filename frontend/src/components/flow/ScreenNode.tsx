@@ -1,8 +1,8 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { Screen } from '../../types/flow';
 
-const ScreenNode = ({ data, selected, ...props }: NodeProps<Screen>) => {
+const ScreenNode = ({ data, selected }: NodeProps<Screen>) => {
   return (
     <div 
       style={{

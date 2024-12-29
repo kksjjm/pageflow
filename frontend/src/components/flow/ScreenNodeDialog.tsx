@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Screen } from '../../types/flow';
+import { Screen, ComponentInfo, APIInfo } from '../../types/flow';
 
 interface ScreenNodeDialogProps {
   isOpen: boolean;
@@ -9,23 +9,29 @@ interface ScreenNodeDialogProps {
   buttonPosition?: { x: number; y: number };
 }
 
+const DEFAULT_METHOD = 'GET' as const;
+const DEFAULT_FORMAT = 'JSON' as const;
+
 const ScreenNodeDialog: React.FC<ScreenNodeDialogProps> = ({
   isOpen,
   onClose,
   node,
   onSave,
-  buttonPosition,
 }) => {
-  const [formData, setFormData] = React.useState<Screen>({
+  const [formData, setFormData] = React.useState<Screen & { componentInfo?: ComponentInfo; apiInfo?: APIInfo }>({
     id: '',
     name: '',
     description: '',
     image: '',
     component: '',
     api: '',
+    componentInfo: undefined,
+    apiInfo: undefined,
   });
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [components, setComponents] = useState<{ name: string; props: string; children: string; actions: string }[]>([{ name: '', props: '', children: '', actions: '' }]);
+  const [apis, setApis] = useState<{ apiID: string; endpoint: string }[]>([{ apiID: '', endpoint: '' }]);
 
   React.useEffect(() => {
     if (node) {
@@ -36,6 +42,8 @@ const ScreenNodeDialog: React.FC<ScreenNodeDialogProps> = ({
         image: node.image || '',
         component: node.component || '',
         api: node.api || '',
+        componentInfo: node.componentInfo || [],
+        apiInfo: node.apiInfo || [],
       });
       setImagePreview(node.image || null);
     }
@@ -75,9 +83,47 @@ const ScreenNodeDialog: React.FC<ScreenNodeDialogProps> = ({
     setFormData((prev) => ({ ...prev, image: '' })); // 이미지 필드 초기화
   };
 
+  const handleAddComponent = () => {
+    setComponents((prev) => [...prev, { name: '', props: '', children: '', actions: '' }]);
+  };
+
+  const handleComponentChange = (index: number, field: keyof typeof components[0]) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newComponents = [...components];
+    newComponents[index][field] = e.target.value;
+    setComponents(newComponents);
+  };
+
+  const handleAddAPI = () => {
+    setApis((prev) => [...prev, { apiID: '', endpoint: '' }]);
+  };
+
+  const handleAPIChange = (index: number, field: keyof typeof apis[0]) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newApis = [...apis];
+    newApis[index][field] = e.target.value;
+    setApis(newApis);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    const updatedNode = {
+      ...formData,
+      componentInfo: components.map((component) => ({
+        id: component.name,
+        name: component.name,
+        props: component.props,
+      })),
+      apiInfo: apis.map((api) => ({
+        apiID: api.apiID,
+        endpoint: api.endpoint,
+        method: DEFAULT_METHOD,
+        request: {},
+        response: {
+          format: DEFAULT_FORMAT,
+          structure: {},
+        },
+      })),
+    };
+    onSave(updatedNode);
     onClose();
   };
 
@@ -94,7 +140,7 @@ const ScreenNodeDialog: React.FC<ScreenNodeDialogProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-[425px] max-w-full" style={{ position: 'absolute', right: '300px', top: '50%', transform: 'translateY(-50%)' }}>
+      <div className="bg-white rounded-lg p-6 w-[425px] max-w-full" style={{ position: 'absolute', right: '50px', top: '50%', transform: 'translateY(-50%)' }}>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">화면 상세 정보</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">✕</button>
@@ -152,23 +198,69 @@ const ScreenNodeDialog: React.FC<ScreenNodeDialogProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">컴포넌트</label>
-            <input
-              type="text"
-              value={formData.component}
-              onChange={handleChange('component')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <label className="flex flex-row text-sm font-medium text-gray-700 mb-1">컴포넌트</label>
+            {components.map((component, index) => (
+              <div key={index} className="flex items-center mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
+                <input
+                  type="text"
+                  value={component.name}
+                  onChange={handleComponentChange(index, 'name')}
+                  placeholder="Name"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Props</label>
+                <input
+                  type="text"
+                  value={component.props}
+                  onChange={handleComponentChange(index, 'props')}
+                  placeholder="Props"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Children</label>
+                <input
+                  type="text"
+                  value={component.children}
+                  onChange={handleComponentChange(index, 'children')}
+                  placeholder="Children"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Actions</label>
+                <input
+                  type="text"
+                  value={component.actions}
+                  onChange={handleComponentChange(index, 'actions')}
+                  placeholder="Actions"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            ))}
+            <button type="button" onClick={handleAddComponent} className="text-blue-600 hover:underline">+ 추가</button>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">API</label>
-            <input
-              type="text"
-              value={formData.api}
-              onChange={handleChange('api')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            {apis.map((api, index) => (
+              <div key={index} className="flex items-center mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">API ID</label>
+                <input
+                  type="text"
+                  value={api.apiID}
+                  onChange={handleAPIChange(index, 'apiID')}
+                  placeholder="API ID"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Endpoint</label>
+                <input
+                  type="text"
+                  value={api.endpoint}
+                  onChange={handleAPIChange(index, 'endpoint')}
+                  placeholder="Endpoint"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            ))}
+            <button type="button" onClick={handleAddAPI} className="text-blue-600 hover:underline">+ 추가</button>
           </div>
 
           <div className="flex justify-end gap-2 mt-6">

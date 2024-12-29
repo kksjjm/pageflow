@@ -11,6 +11,9 @@ const FlowToolbar: React.FC = () => {
       id: screenId,
       name: 'New Screen',
       description: 'Click to edit details',
+      image: '',
+      component: '',
+      api: '',
     });
   };
 

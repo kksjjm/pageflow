@@ -1,7 +1,22 @@
 import React from 'react';
-import { X, Image as ImageIcon, Code, Api } from 'lucide-react';
+import { X, Image as ImageIcon, Code, Server } from 'lucide-react';
+import {ComponentInfo, APIInfo} from '../../types/flow'
 
-const ScreenDetailPanel = ({ node, onClose }) => {
+
+interface ScreenDetailPanelProps {
+  node: {
+    data: {
+      name: string;
+      description?: string;
+      image?: string;
+      componentInfo?: ComponentInfo;
+      apiInfo?: APIInfo;
+    };
+  } | null;
+  onClose: () => void;
+}
+
+const ScreenDetailPanel: React.FC<ScreenDetailPanelProps> = ({ node, onClose }) => {
   if (!node) return null;
 
   return (
@@ -73,7 +88,7 @@ const ScreenDetailPanel = ({ node, onClose }) => {
         <div>
           <h3 className="text-sm font-medium text-gray-700 mb-2">
             <div className="flex items-center gap-2">
-              <Api className="w-4 h-4" />
+              <Server className="w-4 h-4" />
               <span>API Information</span>
             </div>
           </h3>

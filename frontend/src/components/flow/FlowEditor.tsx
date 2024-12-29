@@ -25,7 +25,7 @@ const FlowEditor: React.FC = () => {
   const { nodes, edges, setNodes, setEdges } = useFlowStore();
   const [selectedEdge, setSelectedEdge] = useState<Connection | null>(null);
   const [selectedNode, setSelectedNode] = useState<Node<Screen> | null>(null);
-  const [buttonPosition, setButtonPosition] = useState<{ x: number; y: number } | null>(null);
+  const [buttonPosition, setButtonPosition] = useState<{ x: number; y: number } | undefined>(undefined);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -63,7 +63,7 @@ const FlowEditor: React.FC = () => {
       setEdges(applyEdgeChanges(changes, edges));
       if (changes.some(change => change.type === 'remove')) {
         setSelectedEdge(null);
-        setButtonPosition(null);
+        setButtonPosition(undefined);
       }
     },
     [edges, setEdges]
@@ -73,7 +73,10 @@ const FlowEditor: React.FC = () => {
     (connection: Connection) => {
       const newEdge: Edge = {
         id: `e${edges.length}`,
-        ...connection,
+        source: connection.source as string,
+        target: connection.target as string,
+        sourceHandle: connection.sourceHandle ?? null,
+        targetHandle: connection.targetHandle ?? null,
         animated: true,
       };
       setEdges([...edges, newEdge]);
@@ -83,9 +86,9 @@ const FlowEditor: React.FC = () => {
 
   const handleDeleteEdge = () => {
     if (selectedEdge) {
-      setEdges(edges.filter(edge => edge.id !== selectedEdge.id));
+      setEdges(edges.filter(edge => edge.id !== selectedEdge.source));
       setSelectedEdge(null);
-      setButtonPosition(null);
+      setButtonPosition(undefined);
     }
   };
 
@@ -100,7 +103,13 @@ const FlowEditor: React.FC = () => {
   };
 
   const handleEdgeClick = (event: React.MouseEvent, edge: Edge) => {
-    setSelectedEdge(edge);
+    const connection: Connection = {
+      source: edge.source,
+      target: edge.target,
+      sourceHandle: edge.sourceHandle ?? null,
+      targetHandle: edge.targetHandle ?? null,
+    };
+    setSelectedEdge(connection);
     setSelectedNode(null);
     const rect = (event.target as HTMLElement).getBoundingClientRect();
     setButtonPosition({ x: rect.x, y: rect.y - 30 });
@@ -109,7 +118,7 @@ const FlowEditor: React.FC = () => {
   const handleNodeClick = (_: React.MouseEvent, node: Node<Screen>) => {
     setSelectedNode(node);
     setSelectedEdge(null);
-    setButtonPosition(null);
+    setButtonPosition(undefined);
     setIsDialogOpen(true);
     setButtonPosition({ x: node.position.x + 20, y: node.position.y });
   };
@@ -152,7 +161,7 @@ const FlowEditor: React.FC = () => {
       <ScreenNodeDialog
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
-        node={selectedNode?.data}
+        node={selectedNode?.data ?? null}
         onSave={handleUpdateNode}
         buttonPosition={buttonPosition}
       />
